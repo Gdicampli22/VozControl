@@ -1,212 +1,270 @@
 import streamlit as st
 import librosa
+import librosa.display
 import soundfile as sf
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 import joblib
+import time
 
-# Configuración de la página con estilo profesional
+# --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(
-    page_title="Módulo de Habla — Interfaz Streamlit",
+    page_title="VozControl+ | Castiel Analytics",
     page_icon="🎙️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Estilos personalizados para emular un entorno profesional de analítica
+# --- PANTALLA EMERGENTE (SPLASH SCREEN) ---
+# Usamos session_state para controlar si ya se mostró en esta sesión
+if 'splash_shown' not in st.session_state:
+    st.session_state.splash_shown = False
+
+if not st.session_state.splash_shown:
+    # Contenedor temporal
+    splash_container = st.empty()
+    
+    with splash_container.container():
+        st.markdown("""
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 85vh; text-align: center; animation: fadeIn 1s ease-in-out;">
+                <h3 style="color: #60A5FA; font-weight: 300; letter-spacing: 3px; text-transform: uppercase;">Proyecto ABP</h3>
+                <h1 style="font-size: 5rem; margin: 10px 0; color: #2563EB; font-weight: 900; letter-spacing: 5px;">ISPC</h1>
+                <h2 style="font-size: 2rem; margin-bottom: 30px; color: #E5E7EB; font-weight: 400;">Técnicas de Procesamiento del Habla</h2>
+                <div style="width: 100px; height: 4px; background-color: #10B981; margin: 20px 0;"></div>
+                <h1 style="font-size: 3.5rem; margin-top: 20px; color: #10B981; font-family: 'Courier New', Courier, monospace; text-shadow: 0px 0px 10px rgba(16, 185, 129, 0.4);">
+                    <span style="color: #fff;">{</span> Castiel Analytics <span style="color: #fff;">}</span>
+                </h1>
+                <p style="margin-top: 40px; color: #9CA3AF; font-size: 1.2rem;">Iniciando Motor V2.5...</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+    time.sleep(4)
+    st.session_state.splash_shown = True
+    st.rerun()
+
+# ==========================================
+# A PARTIR DE AQUÍ COMIENZA LA APP PRINCIPAL
+# ==========================================
+
+# Estilos personalizados (Actualizados para romper caché)
 st.markdown("""
-    <style>
-    .main-title {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: #1E3A8A;
-        margin-bottom: 0.5rem;
-    }
-    .subtitle {
-        font-size: 1.1rem;
-        color: #4B5563;
-        margin-bottom: 2rem;
-    }
-    .metric-box {
-        background-color: #F3F4F6;
-        padding: 1.5rem;
-        border-radius: 0.5rem;
-        border-left: 5px solid #2563EB;
-        margin-bottom: 1rem;
-    }
-    .command-text {
-        font-size: 1.8rem;
-        font-weight: bold;
-        color: #10B981;
-    }
+    <style id="estilos-v2-5">
+    .main-title { font-size: 2.5rem; font-weight: bold; color: #1E3A8A; margin-bottom: 0.2rem; }
+    .subtitle { font-size: 1.1rem; color: #4B5563; margin-bottom: 0.5rem; }
+    .version-badge { background-color: #10B981; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; display: inline-block; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .metric-box { background-color: #F3F4F6; padding: 1.5rem; border-radius: 0.5rem; border-left: 5px solid #2563EB; margin-bottom: 1rem; }
+    .command-text { font-size: 1.8rem; font-weight: bold; color: #10B981; }
     </style>
 """, unsafe_allow_html=True)
 
-# Títulos principales
-st.markdown('<div class="main-title">🎙️ Módulo de Habla — Versión Mejorada</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Prototipo Avanzado de Clasificación de Comandos de Voz (Audio DSP + Machine Learning)</div>', unsafe_allow_html=True)
+# Títulos de la app con el BADGE DE VERSIÓN
+st.markdown('<div class="main-title">🎙️ VozControl+ — Clasificador de Voz</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">Prototipo Avanzado de Clasificación de Comandos | Desarrollado por <b>Castiel Analytics</b></div>', unsafe_allow_html=True)
+st.markdown('<div class="version-badge">✅ VERSIÓN 2.5 (Motor Multiformato .joblib/.pkl)</div>', unsafe_allow_html=True)
 
-# Inicialización de constantes y variables simuladas de tu pipeline (ajustar según tu notebook)
+# Constantes del pipeline
 TARGET_SR = 16000
-TARGET_LEN = 16000 # 1 segundo a 16kHz
+TARGET_LEN = 16000 
 
-# Mapeo de comandos por módulo tal como figuran en tu set de datos
-COMMANDS_MAP = {
-    "Navegación": ["Atrás", "Adelante", "Inicio", "Recargar", "Buscar"],
-    "Multimedia": ["Pausa", "Reproducir", "Siguiente", "Anterior", "Silencio"],
-    "Accesibilidad": ["Zoom In", "Zoom Out", "Contraste", "Lector", "Teclado"],
-    "Web": ["Abrir pestaña", "Cerrar pestaña", "Historial", "Favoritos", "Descargas"]
-}
+# --- FUNCIÓN DE EXTRACCIÓN DE CARACTERÍSTICAS (Tu Feature V3) ---
+def extract_features_v3(audio, sr):
+    features = []
+    n_samples = len(audio)
+    n_fft = min(n_samples, 1024)
+    hop_length = n_fft // 4
 
-# --- BARRA LATERAL CONTROLES ---
-st.sidebar.header("⚙️ Configuración del Sistema")
+    mfccs = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=26, n_fft=n_fft, hop_length=hop_length)
+    features.extend(np.mean(mfccs, axis=1))
+    features.extend(np.std(mfccs, axis=1))
 
-# 1. Selección de Módulo Predictivo
-modulo_seleccionado = st.sidebar.selectbox(
-    "Selecciona el Módulo",
-    options=list(COMMANDS_MAP.keys()),
-    help="Determina el dominio cerrado de comandos para acotar la inferencia."
+    delta_mfcc = librosa.feature.delta(mfccs)
+    features.extend(np.mean(delta_mfcc, axis=1))
+
+    chroma = librosa.feature.chroma_stft(y=audio, sr=sr, n_fft=n_fft, hop_length=hop_length)
+    features.extend(np.mean(chroma, axis=1))
+
+    n_mels = min(128, n_fft // 2 + 1)
+    mel = librosa.feature.melspectrogram(y=audio, sr=sr, n_fft=n_fft, hop_length=hop_length, n_mels=n_mels)
+    mel_db = librosa.power_to_db(mel)
+    features.extend(np.mean(mel_db, axis=1))
+
+    zcr = librosa.feature.zero_crossing_rate(audio, hop_length=hop_length)
+    features.append(np.mean(zcr))
+    features.append(np.std(zcr))
+
+    try:
+        contrast = librosa.feature.spectral_contrast(y=audio, sr=sr, n_fft=n_fft, hop_length=hop_length)
+        features.extend(np.mean(contrast, axis=1))
+    except Exception:
+        features.extend([0.0] * 7)
+
+    centroid = librosa.feature.spectral_centroid(y=audio, sr=sr, n_fft=n_fft, hop_length=hop_length)
+    features.append(np.mean(centroid))
+    features.append(np.std(centroid))
+
+    rolloff = librosa.feature.spectral_rolloff(y=audio, sr=sr, n_fft=n_fft, hop_length=hop_length)
+    features.append(np.mean(rolloff))
+    features.append(np.std(rolloff))
+
+    flatness = librosa.feature.spectral_flatness(y=audio, n_fft=n_fft, hop_length=hop_length)
+    features.append(np.mean(flatness))
+
+    bandwidth = librosa.feature.spectral_bandwidth(y=audio, sr=sr, n_fft=n_fft, hop_length=hop_length)
+    features.append(np.mean(bandwidth))
+
+    rms = librosa.feature.rms(y=audio, hop_length=hop_length)
+    features.append(np.mean(rms))
+    features.append(np.std(rms))
+    features.append(np.max(rms))
+
+    return np.array(features, dtype=np.float32)
+
+# --- MENÚ LATERAL: CARGA MULTIFORMATO (.joblib y .pkl) ---
+st.sidebar.header("1. Cargar Entorno del Modelo")
+st.sidebar.info("Sube los archivos exportados. El modelo puede ser **.pkl** o **.joblib**.")
+
+archivos_subidos = st.sidebar.file_uploader(
+    "Selecciona archivos de IA (.joblib o .pkl)", 
+    type=["joblib", "pkl"], 
+    accept_multiple_files=True,
+    key="uploader_v2" # Nueva key para forzar la actualización del componente
 )
 
-# 2. Control de Ganancia / Amplificación (Gain Slider)
-gain_value = st.sidebar.slider(
-    "3. Amplificación de entrada (×)",
-    min_value=0.1,
-    max_value=5.0,
-    value=1.0,
-    step=0.1,
-    help="↑ Aumentá si el audio sale muy débil · ↓ Bajá si satura."
-)
+# Variables globales para los modelos
+modelo_entrenado = None
+scaler = None
+label_encoder = None
+feature_names = None
 
-# Mostrar lista de comandos esperados en el módulo seleccionado
-st.sidebar.markdown("---")
-st.sidebar.subheader("📋 Comandos del Módulo")
-for cmd in COMMANDS_MAP[modulo_seleccionado]:
-    st.sidebar.markdown(f"- **`{cmd}`**")
+# Procesar archivos subidos
+if archivos_subidos:
+    archivos_requeridos = {'model', 'scaler', 'le', 'features'}
+    archivos_encontrados = set()
 
-
-# --- CUERPO PRINCIPAL / CARGA DE AUDIO ---
-st.subheader("📥 Entrada de Audio de Voz")
-
-col_input, col_info = st.columns([2, 1])
-
-with col_input:
-    # Opción dual para grabar en vivo o cargar archivo pregrabado (Reemplazo avanzado de Gradio)
-    origen_audio = st.radio("Método de entrada:", ["Grabar Micrófono", "Subir Archivo (.wav)"], horizontal=True)
-
-    audio_file = None
-    if origen_audio == "Grabar Micrófono":
-        # Nota: st.audio_input está disponible en versiones recientes de Streamlit (1.37+)
+    for file in archivos_subidos:
+        temp_name = f"temp_{file.name}"
+        with open(temp_name, "wb") as f:
+            f.write(file.getbuffer())
+        
         try:
-            audio_file = st.audio_input("Graba tu comando de voz:")
-        except AttributeError:
-            audio_file = st.file_uploader("Sube tu grabación de micrófono:", type=["wav"])
-            st.warning("Tu versión de streamlit no soporta grabación nativa directa. Usando uploader.")
+            nombre_min = file.name.lower()
+            if 'model' in nombre_min or nombre_min.endswith('.pkl'):
+                modelo_entrenado = joblib.load(temp_name)
+                archivos_encontrados.add('model')
+            elif 'scaler' in nombre_min:
+                scaler = joblib.load(temp_name)
+                archivos_encontrados.add('scaler')
+            elif 'le' in nombre_min or 'label' in nombre_min:
+                label_encoder = joblib.load(temp_name)
+                archivos_encontrados.add('le')
+            elif 'features' in nombre_min:
+                feature_names = joblib.load(temp_name)
+                archivos_encontrados.add('features')
+            
+            os.remove(temp_name)
+        except Exception as e:
+            st.sidebar.error(f"Error al leer {file.name}: {e}")
+
+    # Verificaciones de estado en la barra lateral
+    if archivos_requeridos.issubset(archivos_encontrados):
+        st.sidebar.success("✅ Entorno completo de IA cargado y listo.")
+    elif 'model' in archivos_encontrados and len(archivos_encontrados) == 1:
+        st.sidebar.success("✅ Modelo Predictivo cargado (Modo simple sin escalado).")
     else:
-        audio_file = st.file_uploader("Selecciona un archivo de audio comprimido o crudo:", type=["wav"])
+        st.sidebar.warning("⚠️ Asegúrate de cargar todos los componentes necesarios.")
 
-with col_info:
-    st.info("""
-    **Indicaciones de Uso:**
-    1. Asegúrate de hablar claro y cerca del micrófono.
-    2. El sistema aplica un Trimming automático (`top_db=25`) para remover silencios iniciales y finales.
-    3. Si la confianza es baja, intenta ajustar el slider de amplificación de la barra lateral.
-    """)
+st.sidebar.markdown("---")
+st.sidebar.header("2. Configuración DSP")
+gain_value = st.sidebar.slider("Ganancia de entrada (×)", 0.1, 5.0, 1.0, 0.1)
 
-# --- PROCESAMIENTO E INFERENCIA ---
-if audio_file is not None:
-    st.success("Audio cargado correctamente. Listo para procesar.")
-    
-    if st.button("🚀 Predecir Comando", type="primary"):
-        with st.spinner("Ejecutando Pipeline DSP Avanzado (Feature V3) e Inferencia..."):
-            try:
-                # 1. Carga del archivo utilizando Librosa (emulando predict_from_raw_audio)
-                # Guardamos temporalmente el archivo subido para que Librosa pueda leerlo
-                temp_filename = "temp_input.wav"
-                with open(temp_filename, "wb") as f:
-                    f.write(audio_file.getbuffer())
-                
-                # Carga y remuestreo nativo
-                audio_raw, sr_raw = librosa.load(temp_filename, sr=TARGET_SR)
-                
-                # Aplicar amplificación (Gain Slider)
-                audio_raw = audio_raw * gain_value
-                
-                # 2. Preprocesamiento idéntico a tu notebook
-                # Trimming dinámico a 25dB
-                audio_trimmed, _ = librosa.effects.trim(audio_raw, top_db=25)
-                
-                # Normalización de amplitud
-                if np.max(np.abs(audio_trimmed)) > 0:
-                    audio_processed = audio_trimmed / np.max(np.abs(audio_trimmed))
-                else:
-                    audio_processed = audio_trimmed
-                
-                # Ajuste de longitud fija (Padding/Cropping)
-                audio_fixed = librosa.util.fix_length(audio_processed, size=TARGET_LEN)
-                
-                # 3. Extracción Visual de Señales (Waveform y Espectrograma)
-                fig, axes = plt.subplots(1, 2, figsize=(14, 4))
-                
-                # Gráfico 1: Waveform
-                axes[0].plot(np.linspace(0, 1, len(audio_fixed)), audio_fixed, color='steelblue', linewidth=0.7)
-                axes[0].set_title('Waveform (Preprocesado y Normalizado)')
-                axes[0].set_xlabel('Tiempo (s)')
-                axes[0].set_ylabel('Amplitud')
-                axes[0].grid(True, linestyle='--', alpha=0.5)
-                
-                # Gráfico 2: Mel Spectrogram (Mapeando tu extract_features_v3)
-                S = librosa.feature.melspectrogram(y=audio_fixed, sr=TARGET_SR, n_mels=128, fmax=8000)
-                S_dB = librosa.power_to_db(S, ref=np.max)
-                img = librosa.display.specshow(S_dB, x_axis='time', y_axis='mel', sr=TARGET_SR, fmax=8000, ax=axes[1], cmap='viridis')
-                fig.colorbar(img, ax=axes[1], format='%+2.0f dB')
-                axes[1].set_title('Espectrograma de Mel (128 bandas - Feature V3)')
-                
-                plt.tight_layout()
-                
-                # --- SIMULACIÓN DE INFERENCIA DEL MODELO ENSEMBLE/XGBOOST ---
-                # Aquí llamarías a tu modelo cargado: model.predict() y model.predict_proba()
-                # Para asegurar la ejecución independiente, seleccionamos un comando aleatorio del módulo válido
-                comandos_posibles = COMMANDS_MAP[modulo_seleccionado]
-                comando_predicho = np.random.choice(comandos_posibles)
-                confianza_simulada = np.random.uniform(0.78, 0.98)
-                
-                # Mostrar Resultados con Layout Limpio
-                st.markdown("---")
-                st.subheader("📊 Resultados de la Inferencia")
-                
-                col_res1, col_res2 = st.columns(2)
-                
-                with col_res1:
-                    st.markdown(f"""
-                    <div class="metric-box">
-                        <p style="margin:0; font-size:0.9rem; color:#6B7280; text-transform:uppercase; font-weight:bold;">Comando Detectado</p>
-                        <p class="command-text">{comando_predicho}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+# --- FLUJO PRINCIPAL ---
+if modelo_entrenado is not None:
+    st.subheader("📥 Entrada de Audio de Voz")
+    col_input, col_info = st.columns([2, 1])
+
+    with col_input:
+        origen_audio = st.radio("Método de entrada:", ["Grabar Micrófono", "Subir Archivo (.wav)"], horizontal=True)
+        audio_file = None
+        
+        if origen_audio == "Grabar Micrófono":
+            audio_file = st.audio_input("Graba tu comando de voz:")
+        else:
+            audio_file = st.file_uploader("Selecciona un archivo de audio crudo:", type=["wav"])
+
+    with col_info:
+        st.info("**Pipeline Activo:** Trimming (`top_db=25`), extracción V3 (236 variables) e inferencia en tiempo real.")
+
+    if audio_file is not None:
+        if st.button("🚀 Procesar y Predecir", type="primary"):
+            with st.spinner("Analizando espectro acústico y consultando al modelo..."):
+                try:
+                    # 1. Guardar temporalmente y cargar audio con Librosa
+                    temp_filename = "temp_input.wav"
+                    with open(temp_filename, "wb") as f:
+                        f.write(audio_file.getbuffer())
                     
-                with col_res2:
-                    st.markdown(f"""
-                    <div class="metric-box" style="border-left-color: #F59E0B;">
-                        <p style="margin:0; font-size:0.9rem; color:#6B7280; text-transform:uppercase; font-weight:bold;">Confianza del Ensable (XGBoost)</p>
-                        <p class="command-text" style="color:#F59E0B;">{confianza_simulada*100:.2f}%</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                # Renderizar los gráficos DSP en Streamlit
-                st.pyplot(fig)
-                
-                # Mostrar detalles técnicos de la señal como en tu reporte automatizado
-                st.markdown("**Métricas Técnicas del Audio Recibido:**")
-                st.text(f"Duración original: {len(audio_raw)/sr_raw:.2f}s | Frecuencia de Muestreo: {sr_raw} Hz -> Resampled to {TARGET_SR} Hz")
-                
-                # Limpieza de archivo temporal
-                if os.path.exists(temp_filename):
-                    os.remove(temp_filename)
+                    audio_raw, sr_raw = librosa.load(temp_filename, sr=TARGET_SR)
+                    audio_raw = audio_raw * gain_value
                     
-            except Exception as e:
-                st.error(f"Error al procesar el archivo de audio: {e}")
-                st.info("Asegúrate de que el archivo subido sea un .wav válido y que las dependencias estén correctamente instaladas.")
+                    # 2. Limpieza (Trimming y Padding)
+                    audio_trimmed, _ = librosa.effects.trim(audio_raw, top_db=25)
+                    audio_processed = audio_trimmed / np.max(np.abs(audio_trimmed)) if np.max(np.abs(audio_trimmed)) > 0 else audio_trimmed
+                    audio_fixed = librosa.util.fix_length(audio_processed, size=TARGET_LEN)
+                    
+                    # 3. Generación de Gráficos (Waveform y Espectrograma)
+                    fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+                    axes[0].plot(np.linspace(0, 1, len(audio_fixed)), audio_fixed, color='teal', linewidth=0.7)
+                    axes[0].set_title('Waveform (Señal Limpia)')
+                    
+                    S = librosa.feature.melspectrogram(y=audio_fixed, sr=TARGET_SR, n_mels=128, fmax=8000)
+                    S_dB = librosa.power_to_db(S, ref=np.max)
+                    img = librosa.display.specshow(S_dB, x_axis='time', y_axis='mel', sr=TARGET_SR, fmax=8000, ax=axes[1], cmap='magma')
+                    fig.colorbar(img, ax=axes[1], format='%+2.0f dB')
+                    axes[1].set_title('Espectrograma de Mel')
+                    plt.tight_layout()
+                    
+                    # 4. Inferencia Matemática Real
+                    vector_features = extract_features_v3(audio_fixed, TARGET_SR).reshape(1, -1)
+                    
+                    if scaler is not None:
+                        vector_features = scaler.transform(vector_features)
+                    
+                    prediccion_numerica = modelo_entrenado.predict(vector_features)
+                    
+                    if label_encoder is not None:
+                        comando_predicho = label_encoder.inverse_transform(prediccion_numerica)[0]
+                    else:
+                        comando_predicho = str(prediccion_numerica[0])
+                    
+                    try:
+                        confianza_real = np.max(modelo_entrenado.predict_proba(vector_features)) * 100
+                    except AttributeError:
+                        confianza_real = 100.0 
+                    
+                    # 5. Mostrar Resultados Visuales
+                    st.markdown("---")
+                    col_res1, col_res2 = st.columns(2)
+                    with col_res1:
+                        st.markdown(f"""
+                        <div class="metric-box">
+                            <p style="margin:0; font-size:0.9rem; color:#6B7280; font-weight:bold;">COMANDO DETECTADO</p>
+                            <p class="command-text">{comando_predicho}</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    with col_res2:
+                        st.markdown(f"""
+                        <div class="metric-box" style="border-left-color: #F59E0B;">
+                            <p style="margin:0; font-size:0.9rem; color:#6B7280; font-weight:bold;">NIVEL DE CONFIANZA</p>
+                            <p class="command-text" style="color:#F59E0B;">{confianza_real:.2f}%</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    st.pyplot(fig)
+                    
+                    if os.path.exists(temp_filename): os.remove(temp_filename)
+                        
+                except Exception as e:
+                    st.error(f"Error técnico durante el procesamiento DSP: {e}")
 else:
-    st.write("Esperando interacción del usuario... Sube o graba un comando de voz para comenzar.")
+    st.warning("⚠️ Esperando conexión con el cerebro predictivo. Sube tus archivos de entorno (.joblib o .pkl) en el menú lateral para comenzar.")
