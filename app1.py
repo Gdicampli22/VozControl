@@ -55,7 +55,7 @@ st.markdown("""
 # --- CABECERA MEJORADA CON LOGO PROFESIONAL Y ACCESIBILIDAD ---
 col_logo, col_text = st.columns([1, 5])
 with col_logo:
-    ruta_logo = "./img/logo1.png"
+    ruta_logo = "./imagenes/logo1.png"
     if os.path.exists(ruta_logo):
         st.image(ruta_logo, width=240)
     else:
