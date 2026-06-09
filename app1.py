@@ -11,7 +11,7 @@ import time
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(
-    page_title="VozControl+ | Castiel Analytics",
+    page_title="VozControl+ | Pro Dashboard",
     page_icon="🎙️",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -33,43 +33,47 @@ if not st.session_state.splash_shown:
                 <h1 style="font-size: 3.5rem; margin-top: 20px; color: #10B981; font-family: 'Courier New', Courier, monospace; text-shadow: 0px 0px 10px rgba(16, 185, 129, 0.4);">
                     <span style="color: #fff;">{</span> Castiel Analytics <span style="color: #fff;">}</span>
                 </h1>
-                <p style="margin-top: 40px; color: #9CA3AF; font-size: 1.2rem;">Iniciando Motor V3 (Directorio Dinámico Automatizado)...</p>
+                <p style="margin-top: 40px; color: #9CA3AF; font-size: 1.2rem;">Iniciando Dashboard MLOps V4.0...</p>
             </div>
         """, unsafe_allow_html=True)
-    time.sleep(4)
+    time.sleep(3.5)
     st.session_state.splash_shown = True
     st.rerun()
 
-# --- ESTILOS PERSONALIZADOS ---
+# --- ESTILOS CSS PROFESIONALES ---
 st.markdown("""
-    <style id="estilos-v2-7">
-    .main-title { font-size: 2.5rem; font-weight: bold; color: #1E3A8A; margin-bottom: 0.2rem; }
-    .subtitle { font-size: 1.1rem; color: #4B5563; margin-bottom: 0.5rem; }
-    .version-badge { background-color: #10B981; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; display: inline-block; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .metric-box { background-color: #F3F4F6; padding: 1.5rem; border-radius: 0.5rem; border-left: 5px solid #2563EB; margin-bottom: 1rem; }
-    .command-text { font-size: 1.8rem; font-weight: bold; color: #10B981; }
-    .sidebar-cmd { font-size: 1.1rem; color: #10B981; font-weight: bold; margin-bottom: 0.5rem; }
+    <style>
+    .main-title { font-size: 2.2rem; font-weight: 800; color: #1E3A8A; margin-bottom: 0.2rem; }
+    .subtitle { font-size: 1rem; color: #64748B; margin-bottom: 1rem; font-weight: 400; }
+    .badge-pro { background: linear-gradient(90deg, #10B981, #059669); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; letter-spacing: 1px; display: inline-block; margin-bottom: 1.5rem; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2); }
+    .metric-value { font-size: 2.5rem; font-weight: 900; color: #1E40AF; line-height: 1.2; }
+    .metric-label { font-size: 0.85rem; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; }
+    .prob-box { background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px; text-align: center; transition: all 0.2s ease;}
+    .prob-box:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .stTabs [data-baseweb="tab-list"] { gap: 24px; }
+    .stTabs [data-baseweb="tab"] { height: 50px; white-space: pre-wrap; background-color: transparent; border-radius: 4px 4px 0px 0px; gap: 1px; padding-top: 10px; padding-bottom: 10px; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- CABECERA MEJORADA CON LOGO PROFESIONAL Y ACCESIBILIDAD ---
-col_logo, col_text = st.columns([1, 5])
+# --- CABECERA SUPERIOR ---
+col_logo, col_text = st.columns([1, 6])
 with col_logo:
     ruta_logo = "./imagenes/logo1.png"
     if os.path.exists(ruta_logo):
-        st.image(ruta_logo, width=240)
+        st.image(ruta_logo, width=340)
     else:
-        st.warning("⚠️ Mover logo1.png a /img")
+        st.warning("⚠️ Logo no encontrado en /imagenes")
 
 with col_text:
-    st.markdown('<div class="main-title">🎙️ Módulo de Habla — VozControl+</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitle">Prototipo Avanzado de Clasificación de Comandos de Voz | Solución de Accesibilidad para Limitaciones Motrices | <b>Castiel Analytics</b></div>', unsafe_allow_html=True)
-    st.markdown('<div class="version-badge">✅ VERSIÓN 1.0 - 2026</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">🎙️ Interfaz de Inferencia: VozControl+</div>', unsafe_allow_html=True)
+    st.markdown('<div class="subtitle">Clasificación Acústica Avanzada | Solución de Accesibilidad Motriz | <b>Castiel Analytics</b></div>', unsafe_allow_html=True)
+    st.markdown('<div class="badge-pro">VERSIÓN 1.5 - VOZCONTROL+</div>', unsafe_allow_html=True)
 
 TARGET_SR = 16000
 TARGET_LEN = 16000 
+UMBRAL_SILENCIO = 0.015 
 
-# --- FUNCIÓN DE EXTRACCIÓN (MANTENIDA ÍNTEGRA) ---
+# --- FUNCIÓN DE EXTRACCIÓN (INTACTA) ---
 def extract_features_v3(audio, sr):
     features = []
     n_samples = len(audio)
@@ -103,179 +107,166 @@ def extract_features_v3(audio, sr):
     features.extend([np.mean(rms), np.std(rms), np.max(rms)])
     return np.array(features, dtype=np.float32)
 
-# --- MENÚ LATERAL Y CONFIGURACIÓN ---
-st.sidebar.header("⚙️ Configuración del Sistema")
+# --- BARRA LATERAL (AJUSTES Y ARTEFACTOS) ---
+st.sidebar.markdown("### ⚙️ Panel de Control")
 COMANDOS_POR_MODULO = {
     "Navegacion": ["Bajar", "Cerrar", "Menu", "Subir"],
     "Multimedia": ["Anterior", "Pausa", "Play", "Siguiente"],
     "Accesibilidad": ["Click", "Doble", "Seleccionar"],
     "Web": ["Cerrar_Pestaña", "Explorar", "Nueva_Pestaña", "Recargar"]
 }
-modulo_seleccionado = st.sidebar.selectbox("1. Selecciona el Módulo", list(COMANDOS_POR_MODULO.keys()))
-gain_value = st.sidebar.slider("2. Amplificación de entrada (×)", 0.5, 4.0, 1.0, 0.5)
+modulo_seleccionado = st.sidebar.selectbox("Módulo Activo", list(COMANDOS_POR_MODULO.keys()))
+
+with st.sidebar.expander("🛠️ Ajustes de DSP", expanded=False):
+    gain_value = st.slider("Ganancia Pre-Procesamiento (×)", 0.5, 4.0, 1.0, 0.5)
+    st.caption("Aumenta la ganancia si el micrófono es muy sensible o capta bajo volumen.")
 
 st.sidebar.markdown("---")
-st.sidebar.markdown(f"### 📋 Comandos disponibles para **{modulo_seleccionado}**:")
-for cmd in COMANDOS_POR_MODULO[modulo_seleccionado]:
-    st.sidebar.markdown(f"• <span class='sidebar-cmd'>{cmd}</span>", unsafe_allow_html=True)
-st.sidebar.markdown("---")
+st.sidebar.markdown("### 📂 Motor de Inferencia")
 
-# --- LÓGICA AUTOMÁTICA DE CARGA DESDE DIRECTORIO ---
 DIRECTORIO_MODELOS = "./modelos"
-
-modelo_entrenado = None
-scaler = None
-label_encoder = None
-feature_columns = None
-features_sel = None
-
-st.sidebar.markdown("### 📂 Estado de los Artefactos")
+modelo_entrenado, scaler, label_encoder, feature_columns, features_sel = None, None, None, None, None
 
 if not os.path.exists(DIRECTORIO_MODELOS):
-    st.sidebar.error(f"⚠️ No existe la carpeta '{DIRECTORIO_MODELOS}' en la raíz del proyecto. Créala para usar la carga automática.")
+    st.sidebar.error(f"Falta directorio '{DIRECTORIO_MODELOS}'.")
 else:
     archivos_carpeta = os.listdir(DIRECTORIO_MODELOS)
     modulo_key = modulo_seleccionado.lower()
     
-    archivos_cargados_log = []
-    
-    # 1. Cargar archivo global
     file_global = next((f for f in archivos_carpeta if 'feature_names' in f.lower() or 'names' in f.lower()), None)
-    if file_global:
-        feature_columns = joblib.load(os.path.join(DIRECTORIO_MODELOS, file_global))
-        archivos_cargados_log.append("Columnas Totales 🌐")
+    if file_global: feature_columns = joblib.load(os.path.join(DIRECTORIO_MODELOS, file_global))
         
-    # 2. Cargar archivos del módulo específico filtrando por nombre
     for file in archivos_carpeta:
         nombre_min = file.lower()
         path_completo = os.path.join(DIRECTORIO_MODELOS, file)
         
         if modulo_key in nombre_min:
-            if 'model' in nombre_min or nombre_min.endswith('.pkl'):
-                modelo_entrenado = joblib.load(path_completo)
-                archivos_cargados_log.append("Modelo 🧠")
-            elif 'scaler' in nombre_min:
-                scaler = joblib.load(path_completo)
-                archivos_cargados_log.append("Scaler ⚖️")
-            elif 'le' in nombre_min or 'label' in nombre_min:
-                label_encoder = joblib.load(path_completo)
-                archivos_cargados_log.append("LabelEncoder 🔤")
-            elif 'features_' in nombre_min:
-                features_sel = joblib.load(path_completo)
-                archivos_cargados_log.append("Features Seleccionadas 🎯")
+            if 'model' in nombre_min or nombre_min.endswith('.pkl'): modelo_entrenado = joblib.load(path_completo)
+            elif 'scaler' in nombre_min: scaler = joblib.load(path_completo)
+            elif 'le' in nombre_min or 'label' in nombre_min: label_encoder = joblib.load(path_completo)
+            elif 'features_' in nombre_min: features_sel = joblib.load(path_completo)
 
     if modelo_entrenado and scaler and feature_columns and features_sel and label_encoder:
-        st.sidebar.success(f"🚀 **Motor de IA listo para {modulo_seleccionado}!**")
-        st.sidebar.caption(f"Componentes activos: {', '.join(archivos_cargados_log)}")
+        st.sidebar.success("🟢 Sistema Online y Cargado")
+        st.sidebar.markdown(f"**Diccionario del módulo:**")
+        for cmd in COMANDOS_POR_MODULO[modulo_seleccionado]:
+            st.sidebar.markdown(f"➤ `{cmd}`")
     else:
-        st.sidebar.warning(f"⚠️ Esperando archivos completos en /modelos para '{modulo_seleccionado}'.")
+        st.sidebar.warning("🟡 Faltan artefactos de IA para este módulo.")
 
-# --- FLUJO PRINCIPAL Y PREDICCIÓN ---
-audio_file = st.audio_input("Grabar o subir comando de voz:")
+# --- CUERPO PRINCIPAL DEL DASHBOARD ---
 
+# Contenedor 1: Captura de Audio
+with st.container(border=True):
+    st.markdown("#### 1️⃣ Origen de la Señal Acústica")
+    tab_mic, tab_upload = st.tabs(["🎙️ Capturar Micrófono", "📁 Cargar Archivo WAV/MP3"])
+    audio_file = None
+    
+    with tab_mic:
+        st.caption("Asegúrate de hablar claro. El sistema cuenta con Detección de Actividad de Voz (VAD).")
+        audio_mic = st.audio_input("Grabar comando:")
+        if audio_mic: audio_file = audio_mic
+
+    with tab_upload:
+        audio_upload = st.file_uploader("Arrastra un archivo de audio", type=['wav', 'mp3', 'ogg'], label_visibility="collapsed")
+        if audio_upload: 
+            st.audio(audio_upload)
+            audio_file = audio_upload
+
+# Lógica de Procesamiento
 if audio_file is not None:
     if modelo_entrenado is None:
-        st.error(f"⚠️ No hay un modelo cargado automáticamente para el módulo '{modulo_seleccionado}'. Revisa la carpeta /modelos.")
+        st.error("No se puede predecir: Faltan archivos del modelo.")
     else:
-        if st.button("🚀 Procesar y Predecir", type="primary"):
-            with st.spinner("Analizando espectro acústico y evaluando features..."):
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("⚡ Ejecutar Predicción de Comando", type="primary", use_container_width=True):
+            with st.spinner("Procesando pipeline de datos..."):
                 try:
-                    # 1. Carga de audio y DSP
+                    # 1. DSP y VAD
                     y, _ = librosa.load(audio_file, sr=TARGET_SR)
-                    y = librosa.effects.trim(y * gain_value, top_db=25)[0]
-                    y_fixed = librosa.util.fix_length(y, size=TARGET_LEN)
+                    y_amplificado = y * gain_value
+                    energia_rms = np.max(librosa.feature.rms(y=y_amplificado))
                     
-                    # 2. Generación de Gráficos (Waveform y Espectrograma)
-                    fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-                    axes[0].plot(np.linspace(0, 1, len(y_fixed)), y_fixed, color='#2563EB', linewidth=0.7)
-                    axes[0].set_title('Waveform (Señal Limpia)')
-                    
-                    S = librosa.feature.melspectrogram(y=y_fixed, sr=TARGET_SR, n_mels=128)
-                    S_dB = librosa.power_to_db(S, ref=np.max)
-                    img = librosa.display.specshow(S_dB, x_axis='time', y_axis='mel', sr=TARGET_SR, ax=axes[1], cmap='magma')
-                    fig.colorbar(img, ax=axes[1], format='%+2.0f dB')
-                    axes[1].set_title('Espectrograma de Mel')
-                    plt.tight_layout()
-                    
-                    # 3. Extracción de características
-                    features_raw = extract_features_v3(y_fixed, TARGET_SR)
-                    
-                    # 4. Alineación de Columnas mediante DataFrame
-                    if feature_columns is not None and features_sel is not None:
-                        features_df = pd.DataFrame([features_raw], columns=feature_columns)
-                        df_filtrado = features_df[features_sel]
-                        vector_features = df_filtrado.values
+                    if energia_rms < UMBRAL_SILENCIO:
+                        st.error(f"🛑 **Interrupción VAD:** Señal demasiado débil (RMS: {energia_rms:.4f}). Se detectó silencio o solo ruido de fondo.")
                     else:
-                        vector_features = features_raw.reshape(1, -1)
-                        n_esp = getattr(modelo_entrenado, "n_features_in_", 60)
-                        if vector_features.shape[1] != n_esp:
-                            if vector_features.shape[1] > n_esp:
-                                vector_features = vector_features[:, :n_esp]
-                            else:
-                                vector_features = np.pad(vector_features, ((0,0), (0, n_esp - vector_features.shape[1])))
-
-                    # 5. Escalado
-                    if scaler is not None:
-                        vector_features = scaler.transform(vector_features)
-                    
-                    # 6. Predicción Numérica
-                    prediccion_numerica = modelo_entrenado.predict(vector_features)
-                    
-                    # 7. Traducción segura con LabelEncoder
-                    if label_encoder is not None:
-                        pred_matriz = np.array(prediccion_numerica).reshape(-1, 1)
-                        comando_predicho = label_encoder.inverse_transform(pred_matriz.flatten())[0]
-                        clases_disponibles = label_encoder.classes_
-                    else:
-                        lista_ordenada = sorted(COMANDOS_POR_MODULO[modulo_seleccionado])
-                        indice = int(prediccion_numerica[0])
-                        comando_predicho = lista_ordenada[indice % len(lista_ordenada)]
-                        clases_disponibles = lista_ordenada
-                    
-                    # 8. Obtención de Probabilidades
-                    try:
-                        probs_raw = modelo_entrenado.predict_proba(vector_features)[0]
-                        confianza_real = np.max(probs_raw) * 100
-                    except AttributeError:
-                        probs_raw = np.zeros(len(clases_disponibles))
-                        confianza_real = 100.0 
-                    
-                    # 9. Mostrar Resultados Visuales
-                    st.markdown("---")
-                    col_res1, col_res2 = st.columns(2)
-                    with col_res1:
-                        st.markdown(f"""
-                        <div class="metric-box">
-                            <p style="margin:0; font-size:0.9rem; color:#6B7280; font-weight:bold;">COMANDO DETECTADO</p>
-                            <p class="command-text">{comando_predicho}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    with col_res2:
-                        st.markdown(f"""
-                        <div class="metric-box" style="border-left-color: #F59E0B;">
-                            <p style="margin:0; font-size:0.9rem; color:#6B7280; font-weight:bold;">NIVEL DE CONFIANZA</p>
-                            <p class="command-text" style="color:#F59E0B;">{confianza_real:.2f}%</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    # 10. Tabla de probabilidades por clase dinámicas
-                    if hasattr(modelo_entrenado, "predict_proba"):
-                        probs_sorted = sorted(zip(clases_disponibles, probs_raw * 100), key=lambda x: x[1], reverse=True)
-                        st.markdown("**Probabilidades por clase:**")
-                        prob_cols = st.columns(len(clases_disponibles))
-                        for i, (clase, prob) in enumerate(probs_sorted):
-                            with prob_cols[i]:
-                                color = "#10B981" if clase == comando_predicho else "#6B7280"
-                                st.markdown(f"""
-                                <div style="text-align:center; padding:8px; border-radius:8px;
-                                            border: 2px solid {color};">
-                                    <b style="color:{color}">{clase}</b><br>
-                                    <span style="font-size:1.3rem; color:{color}">{prob:.1f}%</span>
-                                </div>""", unsafe_allow_html=True)
-                    
-                    st.pyplot(fig)
+                        y_trimmed = librosa.effects.trim(y_amplificado, top_db=25)[0]
+                        y_fixed = librosa.util.fix_length(y_trimmed, size=TARGET_LEN)
                         
+                        # 2. Extracción
+                        features_raw = extract_features_v3(y_fixed, TARGET_SR)
+                        if feature_columns is not None and features_sel is not None:
+                            features_df = pd.DataFrame([features_raw], columns=feature_columns)
+                            vector_features = features_df[features_sel].values
+                        else:
+                            vector_features = features_raw.reshape(1, -1)
+                            n_esp = getattr(modelo_entrenado, "n_features_in_", 60)
+                            vector_features = vector_features[:, :n_esp] if vector_features.shape[1] > n_esp else np.pad(vector_features, ((0,0), (0, n_esp - vector_features.shape[1])))
+
+                        if scaler: vector_features = scaler.transform(vector_features)
+                        
+                        # 3. Predicción
+                        prediccion_numerica = modelo_entrenado.predict(vector_features)
+                        
+                        if label_encoder is not None:
+                            comando_predicho = label_encoder.inverse_transform(np.array(prediccion_numerica).reshape(-1, 1).flatten())[0]
+                            clases_disponibles = label_encoder.classes_
+                        else:
+                            lista_ordenada = sorted(COMANDOS_POR_MODULO[modulo_seleccionado])
+                            comando_predicho = lista_ordenada[int(prediccion_numerica[0]) % len(lista_ordenada)]
+                            clases_disponibles = lista_ordenada
+                        
+                        try:
+                            probs_raw = modelo_entrenado.predict_proba(vector_features)[0]
+                            confianza_real = np.max(probs_raw) * 100
+                        except AttributeError:
+                            probs_raw = np.zeros(len(clases_disponibles))
+                            confianza_real = 100.0 
+
+                        # --- CONTENEDOR 2: RESULTADOS PRINCIPALES ---
+                        st.markdown("#### 2️⃣ Resultados de Clasificación")
+                        with st.container(border=True):
+                            col_res1, col_res2 = st.columns(2)
+                            with col_res1:
+                                st.markdown(f'<div class="metric-label">Comando Identificado</div><div class="metric-value" style="color: #10B981;">{comando_predicho}</div>', unsafe_allow_html=True)
+                            with col_res2:
+                                st.markdown(f'<div class="metric-label">Nivel de Confianza (Softmax)</div><div class="metric-value">{confianza_real:.2f}%</div>', unsafe_allow_html=True)
+                            
+                            st.markdown("<hr style='margin: 1rem 0;'>", unsafe_allow_html=True)
+                            st.markdown("<div class='metric-label' style='margin-bottom:10px;'>Distribución de Probabilidades del Ensamble</div>", unsafe_allow_html=True)
+                            
+                            # Grilla de probabilidades limpia
+                            if hasattr(modelo_entrenado, "predict_proba"):
+                                probs_sorted = sorted(zip(clases_disponibles, probs_raw * 100), key=lambda x: x[1], reverse=True)
+                                cols = st.columns(len(clases_disponibles))
+                                for i, (clase, prob) in enumerate(probs_sorted):
+                                    with cols[i]:
+                                        bg_color = "#ECFDF5" if clase == comando_predicho else "#F8FAFC"
+                                        border_color = "#10B981" if clase == comando_predicho else "#E2E8F0"
+                                        text_color = "#065F46" if clase == comando_predicho else "#64748B"
+                                        st.markdown(f"""
+                                        <div class="prob-box" style="background-color: {bg_color}; border-color: {border_color};">
+                                            <div style="font-size: 0.8rem; font-weight: bold; color: {text_color}; text-transform: uppercase;">{clase}</div>
+                                            <div style="font-size: 1.2rem; font-weight: 800; color: {text_color};">{prob:.1f}%</div>
+                                        </div>
+                                        """, unsafe_allow_html=True)
+
+                        # --- CONTENEDOR 3: ANÁLISIS TÉCNICO (OCULTO POR DEFECTO) ---
+                        with st.expander("🔬 Ver Análisis Espectral y Señal DSP", expanded=False):
+                            st.caption(f"Análisis generado tras VAD. Energía RMS detectada: {energia_rms:.4f}")
+                            fig, axes = plt.subplots(1, 2, figsize=(10, 3))
+                            axes[0].plot(np.linspace(0, 1, len(y_fixed)), y_fixed, color='#2563EB', linewidth=0.5)
+                            axes[0].set_title('Waveform (Normalizada)')
+                            axes[0].axis('off')
+                            
+                            S = librosa.feature.melspectrogram(y=y_fixed, sr=TARGET_SR, n_mels=128)
+                            S_dB = librosa.power_to_db(S, ref=np.max)
+                            librosa.display.specshow(S_dB, x_axis='time', y_axis='mel', sr=TARGET_SR, ax=axes[1], cmap='magma')
+                            axes[1].set_title('Espectrograma de Mel')
+                            axes[1].axis('off')
+                            
+                            plt.tight_layout()
+                            st.pyplot(fig)
+
                 except Exception as e:
-                    st.error(f"Error técnico durante el procesamiento: {e}")
-                    import traceback
-                    st.code(traceback.format_exc())
+                    st.error(f"Error técnico durante la inferencia: {e}")
