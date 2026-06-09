@@ -64,7 +64,7 @@ with col_logo:
 with col_text:
     st.markdown('<div class="main-title">🎙️ Módulo de Habla — VozControl+</div>', unsafe_allow_html=True)
     st.markdown('<div class="subtitle">Prototipo Avanzado de Clasificación de Comandos de Voz | Solución de Accesibilidad para Limitaciones Motrices | <b>Castiel Analytics</b></div>', unsafe_allow_html=True)
-    st.markdown('<div class="version-badge">✅ VERSIÓN 3.5 (Inclusiva & Automatizada)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="version-badge">✅ VERSIÓN 1.0 - 2026</div>', unsafe_allow_html=True)
 
 TARGET_SR = 16000
 TARGET_LEN = 16000 
